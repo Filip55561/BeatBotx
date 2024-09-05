@@ -20,9 +20,18 @@ const client = new Client({
      ]
 })
 
-client.on('guildMemberAdd', (c) => {
+client.on('guildMemberAdd', async(member) => {
     const join = client.channels.cache.get("1281331104422428766");
-    join.send(`Welcome <@${c.user.id}>. By joining this server you have agreed to join the Discarded Club/Clan unless you are already assigned to another clan. Leaving does not reverse this.`)
+    
+    join.send(`Welcome <@${member.user.id}>. By joining this server you have agreed to join the Discarded Club/Clan unless you are already assigned to another clan. Leaving does not reverse this.`)
+
+    const role = member.guild.roles.cache.get("1281363538497245236");
+        try {
+            await member.roles.add(role);
+            console.log(`Assigned role ${role.name} to ${member.user.tag}`);
+        } catch (error) {
+            console.error(`Could not assign role: ${error}`);
+        }
 })
 
 client.on('guildMemberRemove', (c) => {
