@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;  // Use the default port provided by Koyeb
+const port = process.env.PORT || 8000;
 
 app.get('/', (req, res) => res.send('Bot is running!'));
 
