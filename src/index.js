@@ -9,7 +9,7 @@ app.listen(port, () => {
 });
 
 require('dotenv').config();
-const { Client, IntentsBitField, Guild} = require('discord.js');
+const { Client, IntentsBitField, Guild, Collection} = require('discord.js');
 
 const client = new Client({
      intents: [
