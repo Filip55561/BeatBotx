@@ -11,6 +11,7 @@ app.listen(port, () => {
 require('dotenv').config();
 const { Client, IntentsBitField, Guild, Collection} = require('discord.js');
 const { logCommand } = require('./logger');
+var childProcess = require('child_process');
 
 const client = new Client({
      intents: [
@@ -25,12 +26,17 @@ const client = new Client({
 
 client.commands = new Collection();
 const fs = require('fs');
-const commandFiles = fs.readdirSync('src/commands/utility').filter(file => file.endsWith('.js'));
+const commandDirectories = ['/utility', '/fun'];
+
+for(const dir of commandDirectories) {
+    const commandFiles = fs.readdirSync(`src/commands/${dir}`).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/utility/${file}`);
+    const command = require(`./commands${dir}/${file}`);
     client.commands.set(command.data.name, command);
 }
+}
+childProcess.fork('src/deploy-commands');
 
 client.on('guildMemberAdd', async(member) => {
     const join = client.channels.cache.get("1281331104422428766");
