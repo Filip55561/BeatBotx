@@ -19,6 +19,7 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent,
      ]
 })
+const fs = require(fs);
 
 // Command handling setup
 client.commands = new Collection();
