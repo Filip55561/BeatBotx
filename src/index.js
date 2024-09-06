@@ -23,7 +23,7 @@ const client = new Client({
 client.on('guildMemberAdd', async(member) => {
     const join = client.channels.cache.get("1281331104422428766");
     
-    join.send(`Welcome <@${member.user.id}>. By joining this server you have agreed to join the Discarded Club/Clan unless you are already assigned to another clan. Leaving does not reverse this.`)
+    join.send(`Welcome <@${member.user.id}>. By joining this server you have agreed to join the Discarded Club/Clan unless you are already assigned to another clan. Leaving does not reverse this. \n`)
 
     const role = member.guild.roles.cache.get("1281363538497245236");
         try {
@@ -37,6 +37,12 @@ client.on('guildMemberAdd', async(member) => {
 client.on('guildMemberRemove', (c) => {
     const leave = client.channels.cache.get("1281331308332584960");
     leave.send(`<@${c.user.id}> has left the server.`);
+})
+
+client.on('messageCreate', (message) => {
+    if(message.content == "uwu" && message.author.id == "559414108831875086") {
+        message.reply(`<3`);
+    }
 })
 
 client.login(process.env.TOKEN);
