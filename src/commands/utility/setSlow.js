@@ -11,7 +11,7 @@ module.exports = {
         )
         .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers),
 	async execute(interaction) {
-		const seconds = interaction.option.getInteger('seconds');
+		const seconds = interaction.options.getInteger('seconds');
 
         if (seconds < 0 || seconds > 21600) {
             return await interaction.reply('Please provide a valid number of seconds between 0 and 21600.')
