@@ -10,6 +10,7 @@ app.listen(port, () => {
 
 require('dotenv').config();
 const { Client, IntentsBitField, Guild, Collection} = require('discord.js');
+const { logCommand } = require('./logger');
 
 const client = new Client({
      intents: [
@@ -61,9 +62,9 @@ client.on('interactionCreate', async (interaction) => {
 
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
-
     try {
-        await command.execute(interaction);
+        command.execute(interaction);
+        await logCommand(interaction.guild, interaction.user.tag, command.data.name, interaction.options.getInteger('seconds') || '', interaction.channel);
     } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
