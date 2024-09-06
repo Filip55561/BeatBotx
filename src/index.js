@@ -19,10 +19,11 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent,
      ]
 })
-const fs = require(fs);
 
 // Command handling setup
+
 client.commands = new Collection();
+const fs = require('fs');
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
