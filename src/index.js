@@ -70,7 +70,7 @@ client.on('interactionCreate', async (interaction) => {
     if (!command) return;
     try {
         command.execute(interaction);
-        await logCommand(interaction.guild, interaction.user.tag, command.data.name, interaction.options.getInteger('seconds') || '', interaction.channel);
+        await logCommand(interaction.guild, interaction.user.tag, command.data.name, interaction.options.getInteger('time') || '', interaction.options.getChannel('channel') || interaction.channel);
     } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
