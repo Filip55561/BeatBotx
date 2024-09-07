@@ -49,7 +49,7 @@ client.on('guildMemberAdd', async(member) => {
         try {
             await member.roles.add(role);
             await member.setNickname(nickname);
-            console.log(`Assigned role ${role.name} to ${member.user.tag}`);
+            console.log(`Assigned role ${role.name} to ${member.user.tag}, and ${nickname}`);
         } catch (error) {
             console.error(`Could not assign role: ${error}`);
         }
