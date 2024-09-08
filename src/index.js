@@ -73,11 +73,18 @@ client.on('interactionCreate', async (interaction) => {
     if (!command) return;
     try {
         command.execute(interaction);
-        await logCommand(interaction.guild, interaction.user.tag, command.data.name, interaction.options.getInteger('time') || '', interaction.options.getChannel('channel') || interaction.channel);
+        await logCommand(interaction.guild, interaction.user.tag, command.data.name, interaction.options.getInteger('time') || '', interaction.options.getChannel('channel') || interaction.channel, interaction.options.getUser('user'));
     } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error executing this command!', ephemeral: true });
     }
 });
+
+client.on('ready', (bot) => {
+    const join = client.channels.cache.get("1282362655457284096");
+
+    join.send("Bot is officially online!" + bot + " <- if that does not say object Object, something is wrong and should be reported");
+})
+
 
 client.login(process.env.TOKEN);
