@@ -45,10 +45,14 @@ client.on('guildMemberAdd', async(member) => {
     join.send(`Welcome <@${member.user.id}>. By joining this server you have agreed to join the Discarded Club/Clan unless you are already assigned to another clan. Leaving does not reverse this. \n`)
 
     const role = member.guild.roles.cache.get("1281363538497245236");
+    if(!member.displayName.startsWith("Discarded")) {
     const nickname = "Discarded" + member.displayName;
+    }
         try {
             await member.roles.add(role);
+            if(!member.displayName.startsWith("Discarded")) {
             await member.setNickname(nickname);
+        }
             console.log(`Assigned role ${role.name} to ${member.user.tag}, and ${nickname}`);
         } catch (error) {
             console.error(`Could not assign role: ${error}`);
