@@ -1,97 +1,101 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const fs = require('fs');
+const SequelizeStore = require('connect-session-sequelize')(session.Store); // Sequelize session store
 const bcrypt = require('bcrypt');
-const { client } = require('./index.js');
 const crypto = require('crypto');
+const { User, sequelize } = require('./database'); // Import User model and Sequelize instance
+const { client } = require('./index.js'); // Your Discord bot's client
 const secret = process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex');
 
 const app = express();
 const port = process.env.PORT || 8000;
 
+// Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// Session setup
+// Session store using Sequelize
+const sessionStore = new SequelizeStore({
+    db: sequelize,
+});
+
+// Session setup with Sequelize store
 app.use(session({
     secret: secret,
+    store: sessionStore,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: { 
         httpOnly: true, 
         maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
+// Sync the session store with the database
+sessionStore.sync();
+
 app.use(express.urlencoded({ extended: true }));
-
-// User management functions
-function readUsers() {
-    if (!fs.existsSync('users.json')) {
-        return [];
-    }
-    const data = fs.readFileSync('users.json');
-    return JSON.parse(data);
-}
-
-function writeUsers(users) {
-    fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
-}
+sequelize.sync();
 
 app.get('/', (req, res) => {
-    res.sendFile('index.html', {root: '.'});
+    res.sendFile('index.html', { root: '.' });
 });
 
 app.get('/register', (req, res) => {
     res.sendFile('register.html', { root: 'public' });
 });
 
-// Registration route
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
-    const users = readUsers();
 
-    if (users.find(user => user.username === username)) {
-        return res.send('Username already exists. <a href="/register">Try again</a>.');
+    try {
+        // Check if the user already exists
+        const existingUser = await User.findOne({ where: { username } });
+        if (existingUser) {
+            return res.send('Username already exists. <a href="/register">Try again</a>.');
+        }
+
+        // Hash the password and store the user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.create({ username, password: hashedPassword });
+
+        res.send('Registration successful! <a href="/">Login</a>');
+    } catch (error) {
+        console.error('Error during registration:', error);
+        res.status(500).send('An error occurred during registration. Please try again.');
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    users.push({ username, password: hashedPassword });
-    writeUsers(users);
-
-    res.send('Registration successful! <a href="/">Login</a>');
 });
 
-// Handle login form submission
 app.post('/', async (req, res) => {
     const { username, password } = req.body;
-    const users = readUsers();
 
-    // Find user
-    const user = users.find(user => user.username === username);
-    if (user && await bcrypt.compare(password, user.password)) {
-        req.session.authenticated = true; 
-        req.session.username = username; 
-        return res.redirect('/dashboard/');
+    try {
+        // Find the user in the database
+        const user = await User.findOne({ where: { username } });
+        if (user && await bcrypt.compare(password, user.password)) {
+            req.session.authenticated = true;
+            req.session.username = username;
+            return res.redirect('/dashboard/');
+        }
+
+        res.send('Invalid username or password. <a href="/">Try again</a>.');
+    } catch (error) {
+        console.error('Error during login:', error);
+        res.status(500).send('An error occurred during login. Please try again.');
     }
-
-    res.send('Invalid username or password. <a href="/">Try again</a>.');
 });
 
-// Middleware to check authentication
 function checkAuth(req, res, next) {
     if (req.session.authenticated) {
-        next(); // User is authenticated, proceed to the next middleware/route
+        next();
     } else {
-        res.redirect('/'); // Redirect to login if not authenticated
+        res.redirect('/');
     }
 }
 
-// Protect the main dashboard route
+// Dashboard route (protected)
 app.get('/dashboard/', checkAuth, async (req, res) => {
     let guildList = '';
-    console.log('Session:', req.session);
-
     try {
         for (const [guildId, guild] of client.guilds.cache) {
             const channels = guild.channels.cache
@@ -151,6 +155,7 @@ app.get('/dashboard/', checkAuth, async (req, res) => {
     }
 });
 
+// Fetch messages from a channel
 app.get('/guild/:guildId/channel/:channelId', checkAuth, async (req, res) => {
     const { guildId, channelId } = req.params;
     const guild = client.guilds.cache.get(guildId);
@@ -178,86 +183,35 @@ app.get('/guild/:guildId/channel/:channelId', checkAuth, async (req, res) => {
             `;
         }).join('');
 
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Channel - ${channel.name}</title>
-                <link rel="stylesheet" href="/styles.css">
-            </head>
-            <body>
-                <div class="container">
-                    <h2>Channel: #${channel.name}</h2>
-                    <div class="message-list">
-                        ${messageList || 'No messages found'}
-                    </div>
-                    <p><a href="/dashboard/">Back to Dashboard</a></p>
+        res.send(`<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Channel - ${channel.name}</title>
+            <link rel="stylesheet" href="/styles.css">
+        </head>
+        <body>
+            <div class="container">
+                <h2>Channel: #${channel.name}</h2>
+                <div class="message-list">
+                    ${messageList || 'No messages found'}
                 </div>
-            </body>
-            </html>
-        `);
+                <p><a href="/dashboard/">Back to Dashboard</a></p>
+            </div>
+        </body>
+        </html>`);
     } catch (error) {
         console.error('Error fetching messages:', error);
         res.status(500).send('Error fetching messages.');
     }
 });
 
-
-// Text channel messages route
-app.get('/audit-log/:guildId', checkAuth, async (req, res) => {
-    const guild = client.guilds.cache.get(req.params.guildId);
-    if (!guild) return res.status(404).send('Guild not found');
-
-    try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 20 });
-        const auditEntries = auditLogs.entries.map(entry => {
-            const user = entry.executor ? entry.executor.tag : 'Unknown User';
-            return `
-                <div class="audit-entry">
-                    <div class="audit-header">
-                        <span>${entry.action}</span>
-                        <span class="audit-date">${entry.createdAt.toLocaleString()}</span>
-                    </div>
-                    <div class="audit-body">
-                        <div><strong>Executor:</strong> ${user}</div>
-                        <div><strong>Target:</strong> ${entry.target}</div>
-                        <pre><strong>Changes:</strong> ${JSON.stringify(entry.changes, null, 2)}</pre>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Audit Log - ${guild.name}</title>
-                <link rel="stylesheet" href="/styles.css">
-            </head>
-            <body>
-                <div class="audit-log-container">
-                    <h2>Audit Log for ${guild.name}</h2>
-                    ${auditEntries || 'No audit log entries found.'}
-                    <a href="/dashboard/">Back to Dashboard</a>
-                </div>
-            </body>
-            </html>
-        `);
-    } catch (error) {
-        console.error('Error fetching audit logs:', error);
-        res.status(500).send('Error fetching audit logs.');
-    }
-});
-
+// Fetch audit logs
 app.get('/guild/:guildId/audit-log', checkAuth, async (req, res) => {
     const guild = client.guilds.cache.get(req.params.guildId);
     if (!guild) return res.status(404).send('Guild not found');
 
-    // Compact action descriptions
     const actionDescriptions = {
         1: "Member Banned", 2: "Member Unbanned", 20: "Channel Created",
         21: "Channel Updated", 22: "Channel Deleted", 23: "Overwrite Created",
@@ -273,77 +227,53 @@ app.get('/guild/:guildId/audit-log', checkAuth, async (req, res) => {
     };
 
     try {
-        const auditLogs = await guild.fetchAuditLogs({ limit: 20 });
+        const auditLogs = await guild.fetchAuditLogs({ limit: 100 });
         const logs = auditLogs.entries.map(entry => {
             const actionDescription = actionDescriptions[entry.action] || 'Unknown Action';
             return {
                 action: actionDescription,
-                executor: entry.executor.tag,
-                target: entry.target ? entry.target.tag || entry.target.name : 'N/A',
-                reason: entry.reason || 'No reason provided',
-                createdAt: entry.createdAt.toLocaleString(),
+                target: entry.target ? entry.target.tag || entry.target.name : 'Unknown',
+                executor: entry.executor ? entry.executor.tag : 'Unknown',
+                timestamp: entry.createdTimestamp
             };
         });
 
-        let logRows = logs.map(log => `
-            <tr>
-                <td>${log.action}</td>
-                <td>${log.executor}</td>
-                <td>${log.target}</td>
-                <td>${log.reason}</td>
-                <td>${log.createdAt}</td>
-            </tr>
+        let logList = logs.map(log => `
+            <div class="log-entry">
+                <strong>Action:</strong> ${log.action}<br>
+                <strong>Target:</strong> ${log.target}<br>
+                <strong>Executor:</strong> ${log.executor}<br>
+                <strong>Timestamp:</strong> ${new Date(log.timestamp).toLocaleString()}
+            </div>
+            <hr />
         `).join('');
 
-        res.send(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Audit Log - ${guild.name}</title>
-                <link rel="stylesheet" href="/styles.css">
-            </head>
-            <body>
-                <div class="container">
-                    <h2>Audit Log for ${guild.name}</h2>
-                    <table class="audit-log-table">
-                        <thead>
-                            <tr>
-                                <th>Action</th>
-                                <th>Executor</th>
-                                <th>Target</th>
-                                <th>Reason</th>
-                                <th>Timestamp</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${logRows || '<tr><td colspan="5">No audit logs found.</td></tr>'}
-                        </tbody>
-                    </table>
-                    <p><a href="/dashboard/">Back to Dashboard</a></p>
-                </div>
-            </body>
-            </html>
-        `);
+        res.send(`<!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Audit Log - ${guild.name}</title>
+            <link rel="stylesheet" href="/styles.css">
+        </head>
+        <body>
+            <div class="container">
+                <h2>Audit Log for ${guild.name}</h2>
+                ${logList || 'No audit logs found'}
+                <p><a href="/dashboard/">Back to Dashboard</a></p>
+            </div>
+        </body>
+        </html>`);
     } catch (error) {
-        console.error('Error fetching audit log:', error);
-        res.status(500).send('Error fetching audit log');
+        console.error('Error fetching audit logs:', error);
+        res.status(500).send('Error fetching audit logs.');
     }
 });
-
 
 // Logout route
 app.get('/logout', (req, res) => {
     req.session.destroy();
     res.send('You have been logged out. <a href="/">Login again</a>.');
-});
-
-// Route to trigger bot shutdown
-app.post('/shutdown', (req, res) => {
-    res.send('<h1>Shutting down bot...</h1>');
-    console.log('Bot is shutting down via dashboard.');
-    client.destroy();
 });
 
 // Start the Express server
