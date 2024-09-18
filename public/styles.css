@@ -157,3 +157,43 @@ button:hover {
     color: #99aab5; /* Grayish color for timestamps */
     margin-top: 5px; /* Spacing above the timestamp */
 }
+
+/* Audit Log Table Styles */
+.audit-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.audit-log-table th,
+.audit-log-table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.audit-log-table th {
+    background-color: #7289da;
+    color: white;
+    font-weight: bold;
+}
+
+.audit-log-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.audit-log-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.audit-log-table td {
+    color: #333;
+}
+
+.audit-log-table th, td {
+    text-align: left;
+}
+
+.audit-log-table {
+    margin-bottom: 20px;
+}
