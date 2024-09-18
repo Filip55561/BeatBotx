@@ -84,11 +84,4 @@ client.on('interactionCreate', async (interaction) => {
     }
 });
 
-client.on('ready', (bot) => {
-    const join = client.channels.cache.get("1282362655457284096");
-
-    join.send("Bot is officially online!" + bot + " <- if that does not say object Object, something is wrong and should be reported");
-})
-
-
 client.login(process.env.TOKEN);
