@@ -35,7 +35,7 @@ function writeUsers(users) {
 
 // Routes for serving the login and register HTML pages
 app.get('/', (req, res) => {
-    res.sendFile('login.html', { root: 'public' });
+    res.sendFile('index.html');
 });
 
 app.get('/register', (req, res) => {
