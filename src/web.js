@@ -3,25 +3,24 @@ const express = require('express');
 const session = require('express-session');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const { client } = require('./index.js'); // Adjust path if necessary
+const { client } = require('./index.js');
 const crypto = require('crypto');
 const secret = process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex');
 
 const app = express();
 const port = process.env.PORT || 8000;
 
-// Middleware to serve static files from the public folder
 app.use(express.static('public'));
 
 // Session setup
 app.use(session({
-    secret: secret, // Replace with a strong secret
+    secret: secret,
     resave: false,
     saveUninitialized: true,
     cookie: { secure: true } // Set to true if using HTTPS
 }));
 
-app.use(express.urlencoded({ extended: true })); // Middleware to parse form data
+app.use(express.urlencoded({ extended: true }));
 
 // User management functions
 function readUsers() {
@@ -36,7 +35,6 @@ function writeUsers(users) {
     fs.writeFileSync('users.json', JSON.stringify(users, null, 2));
 }
 
-// Routes for serving the login and register HTML pages
 app.get('/', (req, res) => {
     res.sendFile('index.html', {root: '.'});
 });
@@ -50,12 +48,10 @@ app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const users = readUsers();
 
-    // Check if username already exists
     if (users.find(user => user.username === username)) {
         return res.send('Username already exists. <a href="/register">Try again</a>.');
     }
 
-    // Hash password and store user
     const hashedPassword = await bcrypt.hash(password, 10);
     users.push({ username, password: hashedPassword });
     writeUsers(users);
@@ -71,9 +67,9 @@ app.post('/', async (req, res) => {
     // Find user
     const user = users.find(user => user.username === username);
     if (user && await bcrypt.compare(password, user.password)) {
-        req.session.authenticated = true; // Mark the user as authenticated
-        req.session.username = username; // Store username in session
-        return res.redirect('/dashboard/'); // Redirect to the dashboard
+        req.session.authenticated = true; 
+        req.session.username = username;
+        return res.redirect('/dashboard/');
     }
 
     res.send('Invalid username or password. <a href="/">Try again</a>.');
@@ -158,7 +154,6 @@ app.get('/guild/:guildId/channel/:channelId', checkAuth, async (req, res) => {
         // Sort messages by date (descending order)
         const sortedMessages = messages.sort((a, b) => b.createdTimestamp - a.createdTimestamp);
 
-        // Prepare message list
         let messageList = sortedMessages.map(msg => {
             return `<li>
                 <strong>[${msg.author.tag}]:</strong> 
@@ -195,7 +190,7 @@ app.get('/guild/:guildId/channel/:channelId', checkAuth, async (req, res) => {
 
 // Logout route
 app.get('/logout', (req, res) => {
-    req.session.destroy(); // Destroy session
+    req.session.destroy();
     res.send('You have been logged out. <a href="/">Login again</a>.');
 });
 
