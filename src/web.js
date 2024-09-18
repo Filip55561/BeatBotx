@@ -4,6 +4,8 @@ const session = require('express-session');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { client } = require('./index.js'); // Adjust path if necessary
+const crypto = require('crypto');
+const secret = process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex');
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -13,7 +15,7 @@ app.use(express.static('public'));
 
 // Session setup
 app.use(session({
-    secret: process.env.SESSION_SECRET, // Replace with a strong secret
+    secret: secret, // Replace with a strong secret
     resave: false,
     saveUninitialized: true,
     cookie: { secure: true } // Set to true if using HTTPS
