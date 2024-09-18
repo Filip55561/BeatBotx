@@ -3,7 +3,6 @@ const fs = require('fs');
 require('dotenv').config();
 
 const clientId = "1281333649563713576"
-const guildId = "1281314048935333941"
 const token = process.env.TOKEN;
 
 const commands = [];
@@ -26,8 +25,8 @@ const rest = new REST({ version: '10' }).setToken(token);
         console.log('Started refreshing application (/) commands.');
 
         await rest.put(
-            Routes.applicationGuildCommands(clientId, guildId),  // For guild-based commands
-            // Routes.applicationCommands(clientId),  // Uncomment for global commands
+            //Routes.applicationGuildCommands(clientId, guildId),  // For guild-based commands
+             Routes.applicationCommands(clientId),  // Uncomment for global commands
             { body: commands },
         );
 
