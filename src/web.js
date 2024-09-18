@@ -13,7 +13,7 @@ app.use(express.static('public'));
 
 // Session setup
 app.use(session({
-    secret: process.env.PASSWORD, // Replace with a strong secret
+    secret: process.env.SESSION_SECRET, // Replace with a strong secret
     resave: false,
     saveUninitialized: true,
     cookie: { secure: true } // Set to true if using HTTPS
