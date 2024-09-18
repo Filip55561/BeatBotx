@@ -17,7 +17,10 @@ app.use(session({
     secret: secret,
     resave: false,
     saveUninitialized: true,
-    cookie: { secure: true } // Set to true if using HTTPS
+    cookie: { 
+        httpOnly: true, 
+        maxAge: 24 * 60 * 60 * 1000
+    }
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -68,7 +71,7 @@ app.post('/', async (req, res) => {
     const user = users.find(user => user.username === username);
     if (user && await bcrypt.compare(password, user.password)) {
         req.session.authenticated = true; 
-        req.session.username = username;
+        req.session.username = username; 
         return res.redirect('/dashboard/');
     }
 
@@ -87,7 +90,7 @@ function checkAuth(req, res, next) {
 // Protect the main dashboard route
 app.get('/dashboard/', checkAuth, async (req, res) => {
     let guildList = '';
-
+    console.log('Session:', req.session);
     for (const [guildId, guild] of client.guilds.cache) {
         const channels = guild.channels.cache
             .filter(channel => channel.isTextBased())
