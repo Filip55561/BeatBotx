@@ -4,6 +4,7 @@ const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: 'data.sqlite',
+    logging: process.env.NODE_ENV === 'production' ? false : console.log
 });
 
 // Define the User model
