@@ -140,6 +140,7 @@ app.get('/dashboard/', checkAuth, async (req, res) => {
             <body>
                 <div class="container">
                     <h1>Discord Bot Dashboard</h1>
+                    <img src="https://query.hicoria.com/query.php?user=mcx_412502" alt="server status">
                     <div class="guild-info">
                         <h2>Your Servers:</h2>
                         ${guildList || 'No guilds found.'}

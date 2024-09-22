@@ -9,6 +9,11 @@ const sequelize = new Sequelize({
 
 // Define the User model
 const User = sequelize.define('User', {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
     username: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -17,7 +22,7 @@ const User = sequelize.define('User', {
     password: {
         type: DataTypes.STRING,
         allowNull: false,
-    },
+    }
 });
 
 // Export the Sequelize instance and User model

@@ -1,21 +1,21 @@
 const { Guild } = require('discord.js');
 
-const LOG_CHANNEL_ID = '1281328074910076991';
-
 async function logCommand(guild, userTag, commandName, args = '', channel, user) {
-    if(commandName === "membercount" || commandName === "flip") return;
-    const logChannel = guild.channels.cache.get(LOG_CHANNEL_ID);
+    if (commandName === "membercount" || commandName === "flip") return;
     
-    if(user !== null) {
-        if (logChannel) {
-            await logChannel.send(`Command executed: /${commandName} ${args} by ${userTag} in ${channel} for ${user}`);
-        } else {
-            console.error('Log channel not found!');
-        }
+    const logChannel = guild.channels.cache.find(ch => ch.name === 'logs' && ch.type === 'GUILD_TEXT');
+
+    if (!logChannel) {
+        console.error('Log channel not found!');
+        return;
+    }
+
+    // Log the command execution
+    if (user !== null) {
+        await logChannel.send(`Command executed: /${commandName} ${args} by ${userTag} in ${channel} for ${user}`);
     } else {
         await logChannel.send(`Command executed: /${commandName} ${args} by ${userTag} in ${channel}`);
     }
 }
-
 
 module.exports = { logCommand };
