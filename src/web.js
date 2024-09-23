@@ -98,6 +98,15 @@ app.get('/dashboard/', checkAuth, async (req, res) => {
     let guildList = '';
     try {
         for (const [guildId, guild] of client.guilds.cache) {
+            const members = await guild.members.fetch(); // Fetch all members
+            const memberList = members.map(member => {
+                const filteredRoles = member.roles.cache.filter(role => role.name !== '@everyone');
+                const roleList = filteredRoles.map(role => role.name).join(', ');
+                const nicknamePart = member.nickname ? `(${member.nickname})` : '';
+            
+                return `<li>${member.user.username} ${nicknamePart} - ${roleList || ''}</li>`;
+            }).join('');
+
             const channels = guild.channels.cache
                 .filter(channel => channel.isTextBased())
                 .map(channel => {
@@ -122,6 +131,8 @@ app.get('/dashboard/', checkAuth, async (req, res) => {
                     <div class="channel-list">${channels || 'No channels found.'}</div>
                     <h4>Roles:</h4>
                     <ul>${roles}</ul>
+                    <h4>Members:</h4>
+                    <ul>${memberList}</ul>
                     <p><a href="/guild/${guildId}/audit-log">View Audit Log</a></p>
                 </div>
                 <hr />
@@ -151,7 +162,7 @@ app.get('/dashboard/', checkAuth, async (req, res) => {
             </html>`
         );
     } catch (error) {
-        console.error('Error fetching guilds or channels:', error);
+        console.error('Error fetching guilds, members, or channels:', error);
         res.status(500).send('Error loading dashboard. Please try again later.');
     }
 });
