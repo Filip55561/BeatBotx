@@ -70,12 +70,17 @@ app.post('/', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // Find the user in the database
         const user = await User.findOne({ where: { username } });
         if (user && await bcrypt.compare(password, user.password)) {
             req.session.authenticated = true;
             req.session.username = username;
-            return res.redirect('/dashboard/');
+            return req.session.save((err) => {
+                if (err) {
+                    console.error('Error saving session:', err);
+                    return res.status(500).send('Error during session handling. Please try again.');
+                }
+                res.redirect('/dashboard/');
+            });
         }
 
         res.send('Invalid username or password. <a href="/">Try again</a>.');
